@@ -38,7 +38,7 @@ class PretController {
     final empruntsEnCours =
         await _pretDao.obtenirEnCoursParAdherent(idAdherent);
     if (empruntsEnCours.length >= maxEmpruntsSimultanes) {
-      return ResultatOperationAvecDonnee.echec(
+      return const ResultatOperationAvecDonnee.echec(
           'RG-03 : cet adhérent a déjà $maxEmpruntsSimultanes emprunts en cours.');
     }
 

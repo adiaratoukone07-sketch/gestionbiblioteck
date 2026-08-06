@@ -9,7 +9,7 @@ accès direct aux DAO** : tout passe par les `controllers/`.
 |------------------------|--------|------|
 | `login_page.dart`     | ✅ fait | Authentification (identifiant + mot de passe), branchée sur `AuthController.connecter()` |
 | `accueil_page.dart`   | ✅ fait | Point d'entrée après connexion : 4 cartes vers Adhérents / Livres / Emprunts / Tableau de bord |
-| `adherents_page.dart` | ✅ fait | Module "Gestion des adhérents" : liste, recherche par nom, ajout, modification, suppression |
+| `adherents_page.dart` | ✅ refait | Reconstruite selon le design fourni (sidebar dynamique, tableau à colonnes fixes, statuts cliquables, menu contextuel flottant, état vide, formulaire 2 colonnes) |
 | `dashboard_page.dart` | à venir | Tableau de bord (statistiques) |
 | `livres_page.dart`    | à venir | Catalogue des livres + exemplaires |
 | `prets_page.dart`     | à venir | Emprunts / retours |
@@ -34,31 +34,50 @@ accès direct aux DAO** : tout passe par les `controllers/`.
 - `lib/main.dart` a été ajouté (absent jusqu'ici) : point d'entrée qui
   démarre systématiquement sur `LoginPage`.
 
-## `adherents_page.dart` — ce qui a changé par rapport à la maquette d'origine
+## `adherents_page.dart` — reconstruite selon le design fourni
 
-- **Données réelles** : la liste `List<Adherent> adherents` en dur a été
-  remplacée par un chargement asynchrone via `AdherentController.obtenirTous()`
-  / `.rechercher()`, avec un état de chargement (`_enChargement`) et un
-  état "liste vide".
-- **Champs alignés sur le modèle** : `matricule` → `numCarte` partout
-  (contrôleurs, formulaire, affichage), pour correspondre exactement à
-  `Adherent` (`lib/models/adherent.dart`) et à la table `ADHERENT` du
-  MLD.
-- **Écriture via le contrôleur** : `_saveAdherent()` et `_deleteAdherent()`
-  n'écrivent plus dans une liste locale ; ils appellent
-  `AdherentController.inscrire()` / `.modifier()` / `.supprimer()`, qui
-  appliquent RG-01 (unicité du numéro de carte) et RG-05 (pas de
-  suppression si emprunt en cours) et renvoient un `ResultatOperation`
-  affiché tel quel dans le SnackBar en cas d'erreur.
-- **`id_utilisateur` obligatoire (RG-07)** : chaque adhérent créé est
-  rattaché à `AuthController.utilisateurCourant`. Tant que
-  `login_page.dart` n'est pas branchée, cette valeur est `null` et
-  l'ajout/la modification échoue proprement avec un message clair —
-  c'est le comportement attendu, pas un bug.
-- **Correctifs Dart** : l'import `dart:ui` (nécessaire pour l'effet de
-  flou) a été déplacé en haut du fichier (un import en fin de fichier
-  ne compile pas) ; le `ImageFiltered` n'est plus construit inutilement
-  quand `blur == 0`.
+- **Sidebar dynamique** : onglet actif = capsule violet clair
+  (`Color(0xFFEDE9F7)`), les autres restent discrets. "Home" navigue
+  réellement vers `AccueilPage` (déjà construite) ; "Livres",
+  "Emprunts" et "Tableau de bord" basculent sur un espace réservé
+  interne (pas de rechargement de l'app) tant que ces pages n'existent
+  pas — à remplacer par leurs vraies pages une fois prêtes.
+- **Tableau à colonnes fixes** : Nom, Prénom, Nom Complet, Matricule
+  (= `numCarte`), Classe, Statut, actions — alignement garanti par
+  `_ligneColonnes()`, réutilisée à l'identique par l'en-tête et chaque
+  ligne.
+- **Statut calculé dynamiquement**, pas simulé : `_chargerStatuts()`
+  interroge `PretController.obtenirHistoriqueParAdherent()` pour
+  chaque adhérent affiché et déduit "Aucun emprunt" / "En cours" / "En
+  retard" à partir des vrais emprunts en cours (`Pret.estEnCours`,
+  `Pret.estEnRetard`). Cliquer sur un badge affiche pour l'instant un
+  message temporaire — à remplacer par une vraie navigation vers le
+  module Emprunts/Livres une fois ces pages construites.
+- **Menu contextuel flottant** : au clic sur les trois points, un
+  conteneur blanc arrondi avec crayon/poubelle apparaît sur la ligne ;
+  les autres lignes sont floutées (`ImageFiltered` + opacité réduite)
+  et le défilement de la liste est désactivé
+  (`NeverScrollableScrollPhysics`) tant que le menu est ouvert. Un clic
+  en dehors d'une ligne referme le menu.
+- **Suppression confirmée** : un `AlertDialog` de confirmation a été
+  ajouté avant `AdherentController.supprimer()` (non demandé
+  explicitement, mais évite une suppression accidentelle vu que RG-05
+  n'empêche que les adhérents avec emprunts en cours).
+- **État vide dédié** : icône, titre "Aucun adhérent enregistré",
+  sous-titre, bouton "+ Ajouter un adhérent" qui ouvre directement le
+  formulaire en mode ajout.
+- **Formulaire à 2 colonnes** (Nom/Prénom puis Matricule/Classe),
+  conforme à l'Image 2 de la maquette, avec `ModeFormulaire` (`masque`
+  / `ajout` / `modification`) pilotant le texte du bouton et le
+  pré-remplissage des champs.
+- **Simplification assumée** : le prompt de design décrit un effet où
+  la ligne sélectionnée "se déplace visuellement à la première ligne
+  disponible" façon carrousel (cf. Image 1). Cet effet n'a pas été
+  reproduit tel quel — trop coûteux à maintenir sur une liste
+  connectée à une vraie base de données qui peut se réordonner (tri,
+  recherche...). À la place : mise en surbrillance + ombre portée sur
+  la ligne sélectionnée, flou uniforme sur les autres. Dis-le si tu
+  veux qu'on pousse plus loin sur cet effet précis.
 
 ## Dépendance requise (`pubspec.yaml`)
 
