@@ -83,6 +83,13 @@ class ExemplaireController {
     return _exemplaireDao.obtenirParLivre(idLivre);
   }
 
+  /// Retrouve un exemplaire par son id — utilisé par `prets_page.dart`
+  /// pour retrouver le livre associé à un emprunt (`Pret.idExemplaire`
+  /// -> `Exemplaire.idLivre` -> `Livre`).
+  Future<Exemplaire?> obtenirParId(int idExemplaire) {
+    return _exemplaireDao.obtenirParId(idExemplaire);
+  }
+
   /// Utilisé par `PretController` pour vérifier RG-02 avant d'enregistrer
   /// un emprunt.
   Future<List<Exemplaire>> obtenirDisponibles(int idLivre) {

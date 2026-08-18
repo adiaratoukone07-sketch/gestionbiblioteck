@@ -1,0 +1,10 @@
+Place ici l'image de fond de la page de connexion :
+
+    login_background.jpg
+
+Dimensions recommandées : voir lib/views/README.md
+(section "Image de fond de la connexion").
+
+Ce fichier texte n'est là que pour que le dossier existe dans le
+projet (obligatoire tant que `pubspec.yaml` référence `assets/images/`)
+— tu peux le supprimer une fois ta vraie image ajoutée.

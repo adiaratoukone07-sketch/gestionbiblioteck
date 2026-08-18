@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../controllers/auth_controller.dart';
+import '../widgets/custom_title_bar.dart';
 import 'accueil_page.dart';
 
 /// Page de connexion (cf. cahier des charges - module "Authentification" :
@@ -32,6 +33,13 @@ class _LoginPageState extends State<LoginPage> {
   bool _motDePasseVisible = false;
   bool _enConnexion = false;
   String? _messageErreur;
+
+  /// Chemin de l'image de fond. Place le fichier dans
+  /// `assets/images/login_background.jpg` et déclare-le dans le
+  /// `pubspec.yaml` (section `flutter: assets:`) — cf.
+  /// `lib/views/README.md` pour les dimensions recommandées et un
+  /// exemple de déclaration.
+  static const String _cheminImageFond = 'assets/images/login_background2.png';
 
   @override
   void dispose() {
@@ -74,64 +82,51 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [Color(0xFF6E5AAE), Color(0xFF241A3E)],
+      body: Column(
+        children: [
+          // Barre de titre personnalisée (cf. lib/widgets/custom_title_bar.dart) :
+          // remplace la barre Windows par défaut visible sur les captures.
+          const BarreTitrePersonnalisee(
+            couleurFond: Color(0xFF241A3E),
+            couleurTexte: Colors.white,
+            couleurIcones: Colors.white70,
           ),
-        ),
-        child: Stack(
-          children: [
-            // Formes décoratives en fond (cf. maquette).
-            Positioned(
-              left: -120,
-              bottom: -150,
-              child: _tacheDecorative(340, Colors.deepPurple.withOpacity(0.35)),
-            ),
-            Positioned(
-              right: -110,
-              top: -130,
-              child: _tacheDecorative(280, Colors.black.withOpacity(0.25)),
-            ),
-            Positioned(
-              top: 32,
-              left: 32,
-              child: _buildLogo(),
-            ),
-            Center(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(24),
-                child: LayoutBuilder(
-                  builder: (context, constraints) {
-                    final estLarge = constraints.maxWidth > 760;
-                    final formulaire = _buildCarteFormulaire();
-                    if (!estLarge) return formulaire;
-                    return Row(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        _buildImageLivres(),
-                        const SizedBox(width: 32),
-                        formulaire,
-                      ],
-                    );
-                  },
+          Expanded(
+            child: Container(
+              width: double.infinity,
+              decoration: const BoxDecoration(
+                // Image de fond à la place des formes décoratives
+                // précédentes. `BoxFit.cover` remplit toute la fenêtre
+                // quelle que soit sa taille (responsive) en rognant si
+                // besoin ; voir README pour les dimensions conseillées.
+                image: DecorationImage(
+                  image: AssetImage(_cheminImageFond),
+                  fit: BoxFit.cover,
                 ),
+                // Dégradé de secours tant que l'image n'est pas
+                // fournie, pour ne pas avoir un écran cassé si
+                // l'asset est manquant pendant le développement.
+                color: Color(0xFF2E2154),
+              ),
+              child: Stack(
+                children: [
+                  Positioned(
+                    top: 24,
+                    left: 24,
+                    child: _buildLogo(),
+                  ),
+                  Center(
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.all(24),
+                      child: _buildCartesJumelees(),
+                    ),
+                  ),
+                ],
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
-    );
-  }
-
-  Widget _tacheDecorative(double taille, Color couleur) {
-    return Container(
-      width: taille,
-      height: taille,
-      decoration: BoxDecoration(shape: BoxShape.circle, color: couleur),
     );
   }
 
@@ -139,54 +134,109 @@ class _LoginPageState extends State<LoginPage> {
     return Container(
       width: 56,
       height: 56,
-      decoration: BoxDecoration(
+      decoration: const BoxDecoration(
         shape: BoxShape.circle,
-        color: Colors.black,
-        border: Border.all(color: const Color(0xFFC9A34D), width: 2),
+        color: Color(0xFFC7BADE),
       ),
-      child: const Icon(Icons.menu_book_rounded, color: Color(0xFFC9A34D)),
+      child: ClipOval(
+        child: Image.asset(
+          'assets/icons/mon_logo.png', // ton image perso
+          fit: BoxFit.cover,
+        ),
+      ),
+    );
+  }
+
+  /// Les deux cartes (photo de livres + formulaire) collées l'une à
+  /// l'autre, sans espace entre elles, avec un arrondi uniquement sur
+  /// les coins extérieurs — pour donner l'impression d'une seule pièce
+  /// coupée en deux (cf. Image 3 / dernière maquette).
+  Widget _buildCartesJumelees() {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final estLarge = constraints.maxWidth > 760;
+        if (!estLarge) {
+          // Écran étroit : les cartes ne peuvent plus être côte à
+          // côte, on garde uniquement le formulaire, avec un arrondi
+          // complet cette fois.
+          return _buildCarteFormulaire(arrondiComplet: true);
+        }
+        return IntrinsicHeight(
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _buildImageLivres(),
+              _buildCarteFormulaire(arrondiComplet: false),
+            ],
+          ),
+        );
+      },
     );
   }
 
   Widget _buildImageLivres() {
     return ClipRRect(
-      borderRadius: BorderRadius.circular(24),
+      borderRadius: const BorderRadius.only(
+        topLeft: Radius.circular(24),
+        bottomLeft: Radius.circular(24),
+      ),
       child: Container(
         width: 220,
-        height: 380,
         decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [Colors.black.withOpacity(0.35), const Color(0xFF241A3E)],
+            colors: [
+              Colors.black.withValues(alpha: 0.35),
+              const Color(0xFF241A3E)
+            ],
           ),
         ),
-        // Remplacer par Image.asset('assets/pile_livres.jpg') pour
-        // reproduire fidèlement la photo de la maquette.
-        child: const Icon(Icons.menu_book, size: 64, color: Colors.white24),
+        // CORRECTIF : le `Center` qui entourait l'Image donnait des
+        // contraintes non-bornées à l'enfant, donc l'image se
+        // dessinait à sa taille intrinsèque au lieu de remplir le
+        // Container — `BoxFit.cover` n'avait alors aucun effet, et
+        // l'image ne suivait pas les variations de hauteur du
+        // Container (ex. quand le message d'erreur agrandit la carte
+        // voisine via `IntrinsicHeight` + `stretch`). En la mettant
+        // en enfant direct du Container (contraintes strictes /
+        // "tight" transmises telles quelles car il n'y a pas
+        // d'`alignment` sur ce Container), l'image remplit tout
+        // l'espace disponible et `BoxFit.cover` peut correctement la
+        // recadrer, quelle que soit la hauteur de la carte.
+        child: Image.asset(
+          'assets/images/pile_livres.png',
+          fit: BoxFit.cover,
+        ),
       ),
     );
   }
 
-  Widget _buildCarteFormulaire() {
+  Widget _buildCarteFormulaire({required bool arrondiComplet}) {
     return Container(
       width: 380,
-      padding: const EdgeInsets.all(28),
+      padding: const EdgeInsets.all(32),
       decoration: BoxDecoration(
-        color: const Color(0xFF7A6BB5),
-        borderRadius: BorderRadius.circular(28),
+        color: const Color.fromARGB(157, 255, 255, 255),
+        borderRadius: arrondiComplet
+            ? BorderRadius.circular(32)
+            : const BorderRadius.only(
+                topRight: Radius.circular(32),
+                bottomRight: Radius.circular(32),
+              ),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           Container(
-            width: 96,
-            height: 96,
+            width: 50,
+            height: 50,
             decoration: BoxDecoration(
               color: const Color(0xFFEDEAF7),
-              borderRadius: BorderRadius.circular(24),
+              borderRadius: BorderRadius.circular(50),
             ),
-            child: const Icon(Icons.person, size: 48, color: Color(0xFF5E4FA2)),
+            child: const Icon(Icons.person, size: 35, color: Color(0xFF5E4FA2)),
           ),
           const SizedBox(height: 28),
           _buildChamp(
@@ -203,7 +253,7 @@ class _LoginPageState extends State<LoginPage> {
             actionFin: IconButton(
               icon: Icon(
                 _motDePasseVisible ? Icons.visibility_off : Icons.visibility,
-                color: const Color(0xFF7C6BC4),
+                color: const Color.fromARGB(155, 4, 0, 20),
               ),
               onPressed: () =>
                   setState(() => _motDePasseVisible = !_motDePasseVisible),
@@ -228,8 +278,13 @@ class _LoginPageState extends State<LoginPage> {
                 backgroundColor: const Color(0xFF4C3E87),
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 16),
-                shape:
-                    RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+                // FORME DU BOUTON "Connexion" : change ce
+                // `circular(28)` pour ajuster l'arrondi du bouton
+                // (ex. `circular(12)` pour un rectangle à coins
+                // légèrement arrondis, `circular(0)` pour un
+                // rectangle net).
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(28)),
                 elevation: 0,
               ),
               child: _enConnexion
@@ -237,11 +292,12 @@ class _LoginPageState extends State<LoginPage> {
                       width: 22,
                       height: 22,
                       child: CircularProgressIndicator(
-                          strokeWidth: 2.4, color: Colors.white),
+                          strokeWidth: 2.4,
+                          color: Color.fromARGB(255, 212, 166, 226)),
                     )
                   : Text('Connexion',
-                      style: GoogleFonts.quicksand(
-                          fontSize: 16, fontWeight: FontWeight.w700)),
+                      style: GoogleFonts.inter(
+                          fontSize: 18, fontWeight: FontWeight.w700)),
             ),
           ),
         ],
@@ -257,24 +313,43 @@ class _LoginPageState extends State<LoginPage> {
     Widget? actionFin,
     void Function(String)? onSubmitted,
   }) {
-    return Container(
-      decoration: BoxDecoration(
-        color: const Color(0xFFF3F1FA),
-        borderRadius: BorderRadius.circular(30),
+    return TextField(
+      controller: controleur,
+      obscureText: masque,
+      onSubmitted: onSubmitted,
+      style: GoogleFonts.inter(
+        color: const Color.fromARGB(255, 64, 26, 139),
+        fontSize: 13,
       ),
-      child: TextField(
-        controller: controleur,
-        obscureText: masque,
-        onSubmitted: onSubmitted,
-        style: GoogleFonts.nunito(color: const Color(0xFF3B2470), fontSize: 16),
-        decoration: InputDecoration(
-          hintText: hint,
-          hintStyle: GoogleFonts.nunito(color: const Color(0xFF9C93B8)),
-          prefixIcon: Icon(icone, color: const Color(0xFF7C6BC4)),
-          suffixIcon: actionFin,
-          border: InputBorder.none,
-          contentPadding:
-              const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
+      decoration: InputDecoration(
+        filled: true,
+        fillColor: const Color(0xFFF3F1FA),
+        hintText: hint,
+        hintStyle: GoogleFonts.inter(
+          color: const Color.fromARGB(193, 4, 0, 14),
+        ),
+        prefixIcon: Icon(
+          icone,
+          color: const Color.fromARGB(160, 1, 0, 7),
+        ),
+        suffixIcon: actionFin,
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(28),
+          borderSide: const BorderSide(
+            color: Color.fromARGB(255, 248, 247, 252),
+            width: 1.2,
+          ),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(28),
+          borderSide: const BorderSide(
+            color: Color.fromARGB(255, 142, 117, 250),
+            width: 2,
+          ),
+        ),
+        contentPadding: const EdgeInsets.symmetric(
+          vertical: 10,
+          horizontal: 8,
         ),
       ),
     );

@@ -39,7 +39,7 @@ class PretController {
         await _pretDao.obtenirEnCoursParAdherent(idAdherent);
     if (empruntsEnCours.length >= maxEmpruntsSimultanes) {
       return const ResultatOperationAvecDonnee.echec(
-          'RG-03 : cet adhérent a déjà $maxEmpruntsSimultanes emprunts en cours.');
+          'RG-03 : cet adhérent a déjà  $maxEmpruntsSimultanes emprunts en cours.');
     }
 
     // RG-02 : un emprunt n'est possible que si au moins un exemplaire
@@ -95,6 +95,10 @@ class PretController {
   /// Emprunts en cours (cf. cas d'utilisation "Consulter les emprunts
   /// en cours").
   Future<List<Pret>> obtenirEnCours() => _pretDao.obtenirEnCours();
+
+  /// Tous les emprunts, quel que soit leur statut — utilisé par le
+  /// filtre "Tous" de `prets_page.dart`.
+  Future<List<Pret>> obtenirTous() => _pretDao.obtenirTous();
 
   /// Calcul et affichage automatique des retards (cf. cahier des
   /// charges - module Gestion des emprunts + Tableau de bord).

@@ -1,3 +1,4 @@
+import 'package:bitsdojo_window/bitsdojo_window.dart';
 import 'package:flutter/material.dart';
 
 import 'controllers/auth_controller.dart';
@@ -9,6 +10,18 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await _creerCompteTestSiBesoin();
   runApp(const BibliothequeApp());
+
+  // Configure la fenêtre "frameless" (sans barre de titre Windows par
+  // défaut) : cf. `lib/widgets/custom_title_bar.dart` pour la barre
+  // personnalisée affichée à la place sur chaque page.
+  doWhenWindowReady(() {
+    const tailleInitiale = Size(1280, 720);
+    appWindow.minSize = const Size(1000, 650);
+    appWindow.size = tailleInitiale;
+    appWindow.alignment = Alignment.center;
+    appWindow.title = 'Bibliotech';
+    appWindow.show();
+  });
 }
 
 /// Crée un compte bibliothécaire de test au tout premier lancement, si

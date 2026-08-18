@@ -1,4 +1,4 @@
-name: bibliotheque_scolaire
+name: Biblio_tech
 description: Système de Gestion de Bibliothèque Scolaire (Équipe 3)
 publish_to: 'none'
 version: 0.1.0
@@ -22,6 +22,9 @@ dependencies:
   # Interface (cf. maquettes des vues)
   google_fonts: ^6.2.1
 
+  # Barre de titre personnalisée (fenêtre "frameless" sur Windows)
+  bitsdojo_window: ^0.1.6
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -29,3 +32,12 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  # Nécessaire pour l'image de fond de login_page.dart — crée le
+  # dossier et place-y ton fichier (cf. lib/views/README.md pour les
+  # dimensions recommandées).
+  assets:
+    - assets/images/fond_bibliotech.png
+    - assets/images/login_background2.png
+    - assets/icons/mon_logo.png
+    - assets/images/pile_livres.png
+
