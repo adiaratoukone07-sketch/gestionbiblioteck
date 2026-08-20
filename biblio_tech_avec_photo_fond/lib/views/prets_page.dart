@@ -13,8 +13,8 @@ import '../widgets/app_shell.dart';
 /// Filtre appliqué à la liste des emprunts.
 enum _FiltrePrets { enCours, enRetard, tous }
 
-/// Détails résolus d'un emprunt (le modèle Pret ne stocke que des
-/// id : idAdherent, idExemplaire), pour l'affichage.
+/// Détails résolus d'un emprunt (le modèle `Pret` ne stocke que des
+/// id : `idAdherent`, `idExemplaire`), pour l'affichage.
 class _DetailsPret {
   final String nomAdherent;
   final String titreLivre;
@@ -36,7 +36,7 @@ class _DetailsPret {
 /// RG-02 (disponibilité), RG-03 (max 3 emprunts simultanés) et RG-04
 /// (durée max 14 jours).
 ///
-/// Contrairement à adherents_page.dart / livres_page.dart, cette
+/// Contrairement à `adherents_page.dart` / `livres_page.dart`, cette
 /// page utilise une liste de cartes plutôt qu'un tableau à colonnes
 /// fixes : chaque emprunt combine des informations de deux entités
 /// (adhérent + livre/exemplaire) et se lit mieux empilé qu'aligné en
@@ -360,7 +360,7 @@ class _PretsPageState extends State<PretsPage> {
 
     return ListView.separated(
       itemCount: _prets.length,
-      separatorBuilder: (, _) => const SizedBox(height: 10),
+      separatorBuilder: (_, __) => const SizedBox(height: 10),
       itemBuilder: (context, index) => _buildCartePret(_prets[index]),
     );
   }

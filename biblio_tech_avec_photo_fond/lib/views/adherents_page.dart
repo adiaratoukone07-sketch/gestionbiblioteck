@@ -3,8 +3,6 @@ import 'package:google_fonts/google_fonts.dart';
 
 import '../controllers/adherent_controller.dart';
 import '../controllers/auth_controller.dart';
-import '../controllers/exemplaire_controller.dart';
-import '../controllers/livre_controller.dart';
 import '../controllers/pret_controller.dart';
 import '../controllers/resultat_operation.dart';
 import '../models/adherent.dart';
@@ -15,9 +13,9 @@ import 'dashboard_page.dart';
 import 'livres_page.dart';
 import 'prets_page.dart';
 
-/// Modules accessibles depuis la sidebar. adherents est le module de
+/// Modules accessibles depuis la sidebar. `adherents` est le module de
 /// cette page ; les autres ne sont pas encore construits (cf.
-/// dashboard_page.dart, livres_page.dart, prets_page.dart à
+/// `dashboard_page.dart`, `livres_page.dart`, `prets_page.dart` à
 /// venir), donc leur contenu est un simple espace réservé tant qu'ils
 /// n'existent pas — la sidebar bascule dessus sans recharger l'appli.
 enum _ModuleSidebar { home, adherents, livres, emprunts, tableauDeBord }
@@ -30,7 +28,7 @@ enum ModeFormulaire { masque, ajout, modification }
 enum _StatutAdherent { aucunEmprunt, enCours, enRetard }
 
 /// Position du mot "Bibliotech" dans la barre de titre de cette page.
-/// Change cette constante pour le repositionner (ex. Alignment.centerLeft).
+/// Change cette constante pour le repositionner (ex. `Alignment.centerLeft`).
 const Alignment positionTitreAdherents = Alignment.center;
 
 /// Largeur fixe de la colonne d'actions (bouton "..." ou menu
@@ -80,8 +78,6 @@ class _AdherentsPageState extends State<AdherentsPage> {
   final AdherentController _adherentController = AdherentController();
   final AuthController _authController = AuthController();
   final PretController _pretController = PretController();
-  final ExemplaireController _exemplaireController = ExemplaireController();
-  final LivreController _livreController = LivreController();
 
   _ModuleSidebar _moduleActif = _ModuleSidebar.adherents;
 
@@ -89,7 +85,7 @@ class _AdherentsPageState extends State<AdherentsPage> {
   Map<int, _StatutAdherent> _statuts = {};
   bool _enChargement = true;
 
-  /// true si la base ne contient réellement aucun adhérent (calculé
+  /// `true` si la base ne contient réellement aucun adhérent (calculé
   /// uniquement lors des chargements sans filtre de recherche) — sert
   /// à distinguer "base vide" de "recherche sans résultat", qui ne
   /// doivent pas afficher le même message.
@@ -101,12 +97,6 @@ class _AdherentsPageState extends State<AdherentsPage> {
 
   ModeFormulaire _modeFormulaire = ModeFormulaire.masque;
   int? _idEnEdition;
-
-  /// Message d'erreur par champ (clé = nom du champ), affiché sous le
-  /// champ concerné. null/absent = pas d'erreur sur ce champ.
-  /// Remplace le toast générique unique par un retour ciblé, plus
-  /// facile à corriger d'un coup d'œil.
-  final Map<String, String> _erreursChamps = {};
 
   final TextEditingController _nomCtrl = TextEditingController();
   final TextEditingController _prenomCtrl = TextEditingController();
@@ -243,7 +233,6 @@ class _AdherentsPageState extends State<AdherentsPage> {
       _prenomCtrl.clear();
       _numCarteCtrl.clear();
       _classeCtrl.clear();
-      _erreursChamps.clear();
     });
   }
 
@@ -256,7 +245,6 @@ class _AdherentsPageState extends State<AdherentsPage> {
       _prenomCtrl.text = adherent.prenom;
       _numCarteCtrl.text = adherent.numCarte;
       _classeCtrl.text = adherent.classe;
-      _erreursChamps.clear();
     });
   }
 
@@ -264,57 +252,7 @@ class _AdherentsPageState extends State<AdherentsPage> {
     setState(() {
       _modeFormulaire = ModeFormulaire.masque;
       _idEnEdition = null;
-      _erreursChamps.clear();
     });
-  }
-
-  /// Regex assez permissive pour un matricule scolaire : lettres,
-  /// chiffres et tirets, 3 caractères minimum — évite de bloquer un
-  /// format d'établissement particulier tout en filtrant les erreurs
-  /// de saisie évidentes (espace seul, un seul caractère...).
-  static final RegExp _formatMatricule = RegExp(r'^[A-Za-z0-9-]{3,}$');
-
-  /// Valide chaque champ individuellement et remplit
-  /// [_erreursChamps] avec un message ciblé. Retourne true si tout
-  /// est valide.
-  bool _validerChamps({
-    required String nom,
-    required String prenom,
-    required String numCarte,
-  }) {
-    final erreurs = <String, String>{};
-
-    if (nom.isEmpty) {
-      erreurs['nom'] = 'Le nom est obligatoire.';
-    } else if (nom.length < 2) {
-      erreurs['nom'] = 'Le nom doit contenir au moins 2 caractères.';
-    }
-
-    if (prenom.isEmpty) {
-      erreurs['prenom'] = 'Le prénom est obligatoire.';
-    } else if (prenom.length < 2) {
-      erreurs['prenom'] = 'Le prénom doit contenir au moins 2 caractères.';
-    }
-
-    if (numCarte.isEmpty) {
-      erreurs['numCarte'] = 'Le matricule est obligatoire.';
-    } else if (!_formatMatricule.hasMatch(numCarte)) {
-      erreurs['numCarte'] =
-          'Format invalide (lettres/chiffres/tirets, 3 caractères min.).';
-    } else if (_adherents.any((a) =>
-        a.numCarte.toLowerCase() == numCarte.toLowerCase() &&
-        a.idAdherent != _idEnEdition)) {
-      // Vérification rapide côté UI en plus de celle du contrôleur
-      // (source de vérité) : évite un aller-retour base de données
-      // pour le cas le plus courant (doublon déjà visible à l'écran).
-      erreurs['numCarte'] = 'Ce matricule est déjà utilisé par un adhérent.';
-    }
-
-    setState(() => _erreursChamps
-      ..clear()
-      ..addAll(erreurs));
-
-    return erreurs.isEmpty;
   }
 
   Future<void> _validerFormulaire() async {
@@ -323,9 +261,8 @@ class _AdherentsPageState extends State<AdherentsPage> {
     final numCarte = _numCarteCtrl.text.trim();
     final classe = _classeCtrl.text.trim();
 
-    if (!_validerChamps(nom: nom, prenom: prenom, numCarte: numCarte)) {
-      _showToast('Corrigez les champs en rouge avant de continuer.',
-          isError: true);
+    if (nom.isEmpty || prenom.isEmpty || numCarte.isEmpty) {
+      _showToast('Veuillez remplir Nom, Prénom et Matricule.', isError: true);
       return;
     }
 
@@ -362,16 +299,8 @@ class _AdherentsPageState extends State<AdherentsPage> {
     }
 
     if (!resultat.succes) {
-      final message = resultat.messageErreur ?? 'Une erreur est survenue.';
-      // Le contrôleur reste la source de vérité pour les règles
-      // métier (ex. contrainte d'unicité vérifiée en base) : si son
-      // message concerne le matricule, on l'affiche aussi sous le
-      // champ, pas seulement dans le toast.
-      if (message.toLowerCase().contains('matricule') ||
-          message.toLowerCase().contains('carte')) {
-        setState(() => _erreursChamps['numCarte'] = message);
-      }
-      _showToast(message, isError: true);
+      _showToast(resultat.messageErreur ?? 'Une erreur est survenue.',
+          isError: true);
       return;
     }
 
@@ -382,99 +311,33 @@ class _AdherentsPageState extends State<AdherentsPage> {
     await _chargerAdherents(motCle: _searchCtrl.text.trim());
   }
 
-  /// Confirmation de suppression renforcée : vérifie d'abord si
-  /// l'adhérent a des emprunts en cours, pour prévenir clairement
-  /// plutôt que de laisser l'utilisateur découvrir un échec après
-  /// coup (ou pire, une suppression silencieusement incohérente avec
-  /// des emprunts orphelins).
   Future<void> _confirmerSuppression(Adherent adherent) async {
-    final id = adherent.idAdherent;
-    if (id == null) return;
-
-    final historique = await _pretController.obtenirHistoriqueParAdherent(id);
-    final empruntsEnCours = historique.where((p) => p.estEnCours).length;
-
-    if (!mounted) return;
-
     final confirme = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        icon: Container(
-          width: 52,
-          height: 52,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: empruntsEnCours > 0
-                ? const Color(0xFFFCE8E8)
-                : const Color(0xFFF3F1FA),
-          ),
-          child: Icon(
-            empruntsEnCours > 0
-                ? Icons.warning_amber_rounded
-                : Icons.delete_outline,
-            color: empruntsEnCours > 0
-                ? const Color(0xFFB91C1C)
-                : const Color(0xFF5E4FA2),
-          ),
-        ),
-        title: Text('Supprimer ${adherent.nomComplet} ?',
-            textAlign: TextAlign.center,
-            style: GoogleFonts.quicksand(
-                fontWeight: FontWeight.bold,
-                color: const Color(0xFF3B2470))),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              'Cette action est définitive et supprime aussi sa fiche du système.',
-              textAlign: TextAlign.center,
-              style: GoogleFonts.inter(color: const Color(0xFF6B5FA8)),
-            ),
-            if (empruntsEnCours > 0) ...[
-              const SizedBox(height: 12),
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFFCE8E8),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Text(
-                  empruntsEnCours == 1
-                      ? 'Attention : cet adhérent a 1 emprunt en cours.'
-                      : 'Attention : cet adhérent a $empruntsEnCours emprunts en cours.',
-                  textAlign: TextAlign.center,
-                  style: GoogleFonts.inter(
-                      fontWeight: FontWeight.w700,
-                      color: const Color(0xFFB91C1C)),
-                ),
-              ),
-            ],
-          ],
-        ),
-        actionsAlignment: MainAxisAlignment.center,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        title: Text('Supprimer cet adhérent ?',
+            style: GoogleFonts.inter(fontWeight: FontWeight.bold)),
+        content: Text(
+            'Cette action est définitive pour ${adherent.nomComplet}.',
+            style: GoogleFonts.roboto()),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: Text('Annuler',
-                style: GoogleFonts.inter(color: const Color(0xFF6B5FA8))),
+            child: const Text('Annuler'),
           ),
-          ElevatedButton(
+          TextButton(
             onPressed: () => Navigator.pop(context, true),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFB91C1C),
-              foregroundColor: Colors.white,
-              elevation: 0,
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10)),
-            ),
-            child: const Text('Supprimer définitivement'),
+            child: const Text('Supprimer',
+                style: TextStyle(color: Color(0xFFB91C1C))),
           ),
         ],
       ),
     );
 
     if (confirme != true) return;
+    final id = adherent.idAdherent;
+    if (id == null) return;
     await _supprimerAdherent(id);
   }
 
@@ -507,53 +370,6 @@ class _AdherentsPageState extends State<AdherentsPage> {
         _showToast(
             'Nouvel emprunt pour ${adherent.nomComplet} (module Emprunts à venir).');
     }
-  }
-
-  // --- HISTORIQUE DES EMPRUNTS ---
-
-  /// Ouvre la fiche complète d'un adhérent : tout son historique
-  /// d'emprunts (en cours, en retard, rendus), triés du plus récent au
-  /// plus ancien, avec le titre du livre et les dates résolues via
-  /// [PretController.obtenirHistoriqueParAdherent].
-  Future<void> _ouvrirHistorique(Adherent adherent) async {
-    final id = adherent.idAdherent;
-    if (id == null) return;
-
-    // Dialog affiché immédiatement avec un indicateur de chargement,
-    // puis rempli une fois les données résolues — évite un blocage
-    // silencieux de l'UI le temps des requêtes.
-    showDialog(
-      context: context,
-      builder: (context) => _DialogHistoriqueAdherent(
-        adherent: adherent,
-        chargerHistorique: () => _resoudreHistorique(id),
-      ),
-    );
-  }
-
-  /// Récupère l'historique brut puis résout, pour chaque emprunt, le
-  /// titre du livre et le code de l'exemplaire concerné (le modèle
-  /// Pret ne stocke que des id).
-  Future<List<_EntreeHistorique>> _resoudreHistorique(int idAdherent) async {
-    final historique =
-        await _pretController.obtenirHistoriqueParAdherent(idAdherent);
-    // Plus récent en premier.
-    historique.sort((a, b) => b.dateEmprunt.compareTo(a.dateEmprunt));
-
-    final entrees = <_EntreeHistorique>[];
-    for (final pret in historique) {
-      final exemplaire =
-          await _exemplaireController.obtenirParId(pret.idExemplaire);
-      final livre = exemplaire != null
-          ? await _livreController.obtenirParId(exemplaire.idLivre)
-          : null;
-      entrees.add(_EntreeHistorique(
-        pret: pret,
-        titreLivre: livre?.titre ?? 'Livre inconnu',
-        codeExemplaire: exemplaire?.codeExemplaire ?? '—',
-      ));
-    }
-    return entrees;
   }
 
   // --- SIDEBAR ---
@@ -768,7 +584,7 @@ class _AdherentsPageState extends State<AdherentsPage> {
   /// 1. Le formulaire est déjà ouvert (ajout/modification) : on
   ///    n'affiche plus le gros bouton "+ Ajouter" (il ferait doublon
   ///    avec le formulaire déjà visible) — juste un texte compact,
-  ///    dans un SingleChildScrollView pour ne jamais déborder même
+  ///    dans un `SingleChildScrollView` pour ne jamais déborder même
   ///    si la carte est très réduite (corrige le "BOTTOM OVERFLOWED").
   /// 2. Une recherche est active et ne donne aucun résultat, alors
   ///    qu'il existe bien des adhérents en base : message dédié, pas
@@ -907,7 +723,6 @@ class _AdherentsPageState extends State<AdherentsPage> {
             onEdit: () => _ouvrirFormulaireEdition(adherent),
             onDelete: () => _confirmerSuppression(adherent),
             onStatutTap: (statut) => _onStatutTap(adherent, statut),
-            onOpenHistorique: () => _ouvrirHistorique(adherent),
           );
         },
       ),
@@ -959,23 +774,16 @@ class _AdherentsPageState extends State<AdherentsPage> {
           ),
           const SizedBox(height: 10),
           Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Expanded(
-                  child: _buildChamp('Nom', _nomCtrl, cleErreur: 'nom')),
+              Expanded(child: _buildChamp('Nom', _nomCtrl)),
               const SizedBox(width: 12),
-              Expanded(
-                  child:
-                      _buildChamp('Prénom', _prenomCtrl, cleErreur: 'prenom')),
+              Expanded(child: _buildChamp('Prénom', _prenomCtrl)),
             ],
           ),
           const SizedBox(height: 10),
           Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Expanded(
-                  child: _buildChamp('Matricule', _numCarteCtrl,
-                      cleErreur: 'numCarte')),
+              Expanded(child: _buildChamp('Matricule', _numCarteCtrl)),
               const SizedBox(width: 12),
               Expanded(child: _buildChamp('Classe', _classeCtrl)),
             ],
@@ -1004,13 +812,7 @@ class _AdherentsPageState extends State<AdherentsPage> {
     );
   }
 
-  Widget _buildChamp(String label, TextEditingController controller,
-      {String? cleErreur}) {
-    final erreur = cleErreur != null ? _erreursChamps[cleErreur] : null;
-    final enErreur = erreur != null;
-    final couleurBordure =
-        enErreur ? const Color(0xFFDC2626) : const Color(0xFFCFC6E8);
-
+  Widget _buildChamp(String label, TextEditingController controller) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -1022,46 +824,28 @@ class _AdherentsPageState extends State<AdherentsPage> {
         const SizedBox(height: 4),
         TextField(
           controller: controller,
-          // Efface l'erreur du champ dès que l'utilisateur retape,
-          // pour ne pas laisser un message obsolète après correction.
-          onChanged: cleErreur == null
-              ? null
-              : (_) {
-                  if (_erreursChamps.containsKey(cleErreur)) {
-                    setState(() => _erreursChamps.remove(cleErreur));
-                  }
-                },
           style: GoogleFonts.inter(fontSize: 14),
           decoration: InputDecoration(
             isDense: true,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
-              borderSide: BorderSide(color: couleurBordure, width: 1.2),
+              borderSide:
+                  const BorderSide(color: Color(0xFFCFC6E8), width: 1.2),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
-              borderSide: BorderSide(color: couleurBordure, width: 1.2),
+              borderSide:
+                  const BorderSide(color: Color(0xFFCFC6E8), width: 1.2),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
-              borderSide: BorderSide(
-                  color: enErreur
-                      ? const Color(0xFFDC2626)
-                      : const Color(0xFF7C3AED),
-                  width: 1.6),
+              borderSide:
+                  const BorderSide(color: Color(0xFF7C3AED), width: 1.6),
             ),
             contentPadding:
                 const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
           ),
         ),
-        if (enErreur) ...[
-          const SizedBox(height: 4),
-          Text(
-            erreur,
-            style: GoogleFonts.inter(
-                fontSize: 11.5, color: const Color(0xFFDC2626)),
-          ),
-        ],
       ],
     );
   }
@@ -1107,233 +891,11 @@ class _AdherentsPageState extends State<AdherentsPage> {
   }
 }
 
-/// Un emprunt de l'historique, avec le titre du livre et le code
-/// d'exemplaire déjà résolus (le modèle Pret ne stocke que des id).
-class _EntreeHistorique {
-  final Pret pret;
-  final String titreLivre;
-  final String codeExemplaire;
-
-  const _EntreeHistorique({
-    required this.pret,
-    required this.titreLivre,
-    required this.codeExemplaire,
-  });
-}
-
-/// Fiche complète d'un adhérent : tout son historique d'emprunts
-/// (en cours, en retard, rendus), avec un petit résumé en tête
-/// (nombre total d'emprunts, nombre en cours) pour un coup d'œil
-/// rapide avant de dérouler le détail.
-class _DialogHistoriqueAdherent extends StatelessWidget {
-  final Adherent adherent;
-  final Future<List<_EntreeHistorique>> Function() chargerHistorique;
-
-  const _DialogHistoriqueAdherent({
-    required this.adherent,
-    required this.chargerHistorique,
-  });
-
-  String _formaterDate(DateTime date) {
-    return '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Dialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 480, maxHeight: 560),
-        child: Padding(
-          padding: const EdgeInsets.all(20),
-          child: FutureBuilder<List<_EntreeHistorique>>(
-            future: chargerHistorique(),
-            builder: (context, snapshot) {
-              final chargement =
-                  snapshot.connectionState == ConnectionState.waiting;
-              final entrees = snapshot.data ?? const <_EntreeHistorique>[];
-              final nbEnCours = entrees.where((e) => e.pret.estEnCours).length;
-
-              return Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Container(
-                        width: 44,
-                        height: 44,
-                        decoration: const BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: Color(0xFFEDE9F7),
-                        ),
-                        child: const Icon(Icons.person,
-                            color: Color(0xFF5E4FA2)),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(adherent.nomComplet,
-                                style: GoogleFonts.quicksand(
-                                    fontSize: 17,
-                                    fontWeight: FontWeight.bold,
-                                    color: const Color(0xFF3B2470))),
-                            Text(
-                                '${adherent.numCarte} · ${adherent.classe}',
-                                style: GoogleFonts.inter(
-                                    fontSize: 12,
-                                    color: const Color(0xFF9C93B8))),
-                          ],
-                        ),
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.close, size: 20),
-                        onPressed: () => Navigator.pop(context),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 14),
-                  if (!chargement)
-                    Row(
-                      children: [
-                        _puceResume('${entrees.length}',
-                            entrees.length > 1 ? 'emprunts' : 'emprunt'),
-                        const SizedBox(width: 10),
-                        _puceResume('$nbEnCours', 'en cours',
-                            accent: nbEnCours > 0),
-                      ],
-                    ),
-                  const SizedBox(height: 12),
-                  const Divider(height: 1, color: Color(0xFFE9E3F6)),
-                  const SizedBox(height: 4),
-                  Flexible(
-                    child: chargement
-                        ? const Padding(
-                            padding: EdgeInsets.symmetric(vertical: 40),
-                            child: Center(
-                                child: CircularProgressIndicator(
-                                    color: Color(0xFF5E4FA2))),
-                          )
-                        : entrees.isEmpty
-                            ? Padding(
-                                padding: const EdgeInsets.symmetric(
-                                    vertical: 32),
-                                child: Center(
-                                  child: Text(
-                                    "Aucun emprunt enregistré pour l'instant.",
-                                    style: GoogleFonts.nunito(
-                                        color: const Color(0xFF9C93B8)),
-                                    textAlign: TextAlign.center,
-                                  ),
-                                ),
-                              )
-                            : ListView.separated(
-                                shrinkWrap: true,
-                                itemCount: entrees.length,
-                                separatorBuilder: (, _) =>
-                                    const Divider(height: 18, color: Color(0xFFF0ECFA)),
-                                itemBuilder: (context, index) =>
-                                    _ligneHistorique(entrees[index]),
-                              ),
-                  ),
-                ],
-              );
-            },
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _puceResume(String valeur, String label, {bool accent = false}) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      decoration: BoxDecoration(
-        color: accent ? const Color(0xFFE3E0FB) : const Color(0xFFF3F1FA),
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Text.rich(
-        TextSpan(children: [
-          TextSpan(
-              text: '$valeur ',
-              style: GoogleFonts.inter(
-                  fontWeight: FontWeight.w800,
-                  color: accent
-                      ? const Color(0xFF4338CA)
-                      : const Color(0xFF3B2470))),
-          TextSpan(
-              text: label,
-              style: GoogleFonts.inter(
-                  color: accent
-                      ? const Color(0xFF4338CA)
-                      : const Color(0xFF6B5FA8))),
-        ]),
-      ),
-    );
-  }
-
-  Widget _ligneHistorique(_EntreeHistorique entree) {
-    final pret = entree.pret;
-    final Color couleurStatut;
-    final String label;
-    if (pret.estEnRetard) {
-      couleurStatut = const Color(0xFFB91C1C);
-      label = 'En retard';
-    } else if (pret.estEnCours) {
-      couleurStatut = const Color(0xFF4338CA);
-      label = 'En cours';
-    } else {
-      couleurStatut = const Color(0xFF2E7D32);
-      label = 'Rendu';
-    }
-
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Container(
-          width: 8,
-          height: 8,
-          margin: const EdgeInsets.only(top: 5),
-          decoration: BoxDecoration(
-              shape: BoxShape.circle, color: couleurStatut),
-        ),
-        const SizedBox(width: 10),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(entree.titreLivre,
-                  style: GoogleFonts.inter(
-                      fontWeight: FontWeight.w700,
-                      color: const Color(0xFF3B2470))),
-              const SizedBox(height: 2),
-              Text(
-                'Emprunté le ${_formaterDate(pret.dateEmprunt)} · '
-                '${pret.estEnCours ? "retour prévu" : "rendu"} le '
-                '${_formaterDate(pret.estEnCours ? pret.dateRetourPrevue : pret.dateRetourEffective!)}',
-                style: GoogleFonts.nunito(
-                    fontSize: 12, color: const Color(0xFF9C93B8)),
-              ),
-            ],
-          ),
-        ),
-        Text(label,
-            style: GoogleFonts.inter(
-                fontSize: 12,
-                fontWeight: FontWeight.w700,
-                color: couleurStatut)),
-      ],
-    );
-  }
-}
-
 /// Une ligne du tableau, extraite en widget à état propre : son survol
-/// (MouseRegion) est géré localement plutôt que remonté dans
-/// _AdherentsPageState. C'est ce qui corrige le clignotement signalé
+/// (`MouseRegion`) est géré localement plutôt que remonté dans
+/// `_AdherentsPageState`. C'est ce qui corrige le clignotement signalé
 /// au survol — avant, chaque mouvement de souris déclenchait un
-/// setState sur toute la page, qui reconstruisait ListView.builder
+/// `setState` sur toute la page, qui reconstruisait `ListView.builder`
 /// (donc recréait chaque ligne), ce qui pouvait réinitialiser la zone
 /// de détection du survol en boucle. Ici, seule la ligne survolée se
 /// reconstruit, et sa marge ne change jamais (seule la couleur/l'ombre
@@ -1347,7 +909,6 @@ class _LigneAdherentWidget extends StatefulWidget {
   final VoidCallback onEdit;
   final VoidCallback onDelete;
   final void Function(_StatutAdherent?) onStatutTap;
-  final VoidCallback onOpenHistorique;
 
   const _LigneAdherentWidget({
     super.key,
@@ -1359,7 +920,6 @@ class _LigneAdherentWidget extends StatefulWidget {
     required this.onEdit,
     required this.onDelete,
     required this.onStatutTap,
-    required this.onOpenHistorique,
   });
 
   @override
@@ -1409,22 +969,10 @@ class _LigneAdherentWidgetState extends State<_LigneAdherentWidget> {
                   : const []),
         ),
         child: construireLigneColonnes(
-          // Le nom complet fait office de lien vers la fiche complète
-          // (historique des emprunts) — comportement découvrable sans
-          // ajouter une colonne ou un bouton supplémentaire.
           nom: Text(adherent.nom, style: style),
           prenom: Text(adherent.prenom, style: style),
-          nomComplet: InkWell(
-            onTap: widget.onOpenHistorique,
-            child: Text(
-              adherent.nomComplet,
-              style: style.copyWith(
-                fontWeight: FontWeight.w700,
-                decoration: _survolee ? TextDecoration.underline : null,
-                decorationColor: const Color(0xFF3B2470),
-              ),
-            ),
-          ),
+          nomComplet: Text(adherent.nomComplet,
+              style: style.copyWith(fontWeight: FontWeight.w700)),
           matricule: Text(adherent.numCarte, style: style),
           classe: Text(adherent.classe, style: style),
           statut: _buildBadgeStatut(),
@@ -1433,7 +981,6 @@ class _LigneAdherentWidgetState extends State<_LigneAdherentWidget> {
               : IconButton(
                   icon: const Icon(Icons.more_horiz, color: Color(0xFF6B5FA8)),
                   onPressed: widget.onToggleMenu,
-                  tooltip: 'Actions',
                 ),
         ),
       ),
